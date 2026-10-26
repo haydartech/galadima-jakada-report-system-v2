@@ -1,0 +1,84 @@
+name: Build GJA Report Card APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'style.css'
+      - 'script.js'
+      - 'assets/**'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project files
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Android project
+        shell: bash
+        run: |
+          set -e
+
+          mkdir -p apk-build/www
+
+          cp index.html apk-build/www/
+          cp style.css apk-build/www/
+          cp script.js apk-build/www/
+
+          if [ -d assets ]; then
+            cp -R assets apk-build/www/
+          fi
+
+          cd apk-build
+
+          npm init -y
+
+          npm install @capacitor/core@^7.4.3
+          npm install --save-dev @capacitor/cli@^7.4.3
+          npm install @capacitor/android@^7.4.3
+
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.galadimajakada.reportcard",
+            "appName": "GJA Report Card",
+            "webDir": "www"
+          }
+          EOF
+
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK
+        run: |
+          cd apk-build/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK for download
+        uses: actions/upload-artifact@v4
+        with:
+          name: GJA-Report-Card-APK
+          path: apk-build/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
