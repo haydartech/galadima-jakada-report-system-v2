@@ -1,3 +1,4 @@
+```yaml
 name: Build GJA Report Card APK
 
 on:
@@ -64,7 +65,33 @@ jobs:
           npm init -y
 
           npm install @capacitor/core@7 @capacitor/android@7
-          npm install --save-dev @capacitor/cli@7
+          npm install --save-dev @capacitor/cli@7 esbuild
+          npm install @capgo/capacitor-printer@7
+
+          cat > print-bridge.js <<'EOF'
+          import { Printer } from "@capgo/capacitor-printer";
+
+          window.GJAPrinter = Printer;
+          EOF
+
+          npx esbuild print-bridge.js --bundle --format=iife --outfile=www/print-bridge.js
+
+          node --input-type=commonjs <<'EOF'
+          const fs = require("fs");
+          const path = "www/index.html";
+          let html = fs.readFileSync(path, "utf8");
+
+          if (!html.includes("print-bridge.js")) {
+            const tag = '<script src="print-bridge.js"></script>\n';
+            if (/<\/head>/i.test(html)) {
+              html = html.replace(/<\/head>/i, tag + "</head>");
+            } else {
+              html = tag + html;
+            }
+          }
+
+          fs.writeFileSync(path, html);
+          EOF
 
           cat > capacitor.config.json <<'EOF'
           {
@@ -90,3 +117,4 @@ jobs:
           path: apk-build/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+```
