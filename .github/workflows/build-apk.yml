@@ -35,7 +35,20 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      
       - name: Accept licenses and install Android SDK packages
+        shell: bash
+        run: |
+          set -e
+          mkdir -p "$ANDROID_HOME/licenses"
+          printf '%s\n' \
+            '8933bad161af4178b1185d1a37fbf41ea5269c55' \
+            > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf '%s\n' \
+            '84831b9409646a918e30573bab4c9c91346d8abd' \
+            > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
         shell: bash
         run: |
           set -e
