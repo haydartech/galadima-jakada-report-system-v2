@@ -34,11 +34,18 @@ jobs:
 
       - name: Install Android SDK tools
         uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
+
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: |
+          set -e
+          yes | sdkmanager --licenses >/dev/null || true
+
+      - name: Install required Android packages
+        shell: bash
+        run: |
+          set -e
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Accept Android SDK licenses
         shell: bash
