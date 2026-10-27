@@ -49,12 +49,6 @@ jobs:
             > "$ANDROID_HOME/licenses/android-sdk-preview-license"
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-        shell: bash
-        run: |
-          set -e
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
       - name: Prepare offline app
         shell: bash
         run: |
