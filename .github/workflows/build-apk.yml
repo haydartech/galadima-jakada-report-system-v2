@@ -1,4 +1,4 @@
-name: Build GJA Report Card APK
+name: Build GJA Report Card System APK
 
 on:
   workflow_dispatch:
@@ -33,20 +33,15 @@ jobs:
           java-version: "21"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools"
 
-      
-      - name: Accept licenses and install Android SDK packages
+      - name: Accept Android SDK licenses and install packages
         shell: bash
         run: |
           set -e
-          mkdir -p "$ANDROID_HOME/licenses"
-          printf '%s\n' \
-            '8933bad161af4178b1185d1a37fbf41ea5269c55' \
-            > "$ANDROID_HOME/licenses/android-sdk-license"
-          printf '%s\n' \
-            '84831b9409646a918e30573bab4c9c91346d8abd' \
-            > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          yes | sdkmanager --licenses || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Prepare offline app
@@ -59,6 +54,7 @@ jobs:
           test -f script.js
 
           mkdir -p apk-build/www
+
           cp index.html style.css script.js apk-build/www/
 
           if [ -d assets ]; then
@@ -66,6 +62,7 @@ jobs:
           fi
 
           cd apk-build
+
           npm init -y
 
           npm install @capacitor/core@7 @capacitor/android@7
@@ -77,7 +74,10 @@ jobs:
           window.GJAPrinter = Printer;
           EOF
 
-          npx esbuild print-bridge.js --bundle --format=iife --outfile=www/print-bridge.js
+          npx esbuild print-bridge.js \
+            --bundle \
+            --format=iife \
+            --outfile=www/print-bridge.js
 
           node --input-type=commonjs <<'EOF'
           const fs = require("fs");
@@ -86,6 +86,7 @@ jobs:
 
           if (!html.includes("print-bridge.js")) {
             const tag = '<script src="print-bridge.js"></script>\n';
+
             if (/<\/head>/i.test(html)) {
               html = html.replace(/<\/head>/i, tag + "</head>");
             } else {
@@ -122,3 +123,4 @@ jobs:
           path: apk-build/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+          
